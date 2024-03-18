@@ -115,18 +115,26 @@ public:
         return outputMat;
     }
 
-    template<class T2, size_t numRow2, size_t numCol2>
-    Matrix mul(const Matrix<T2, numRow2, numCol2> & other) {
+    template<size_t numRow2, size_t numCol2>
+    Matrix<T, numRow, numCol2> operator*(const Matrix<T, numRow2, numCol2> & other) {
+        // matrix multiplication
 
-        try{
-           assert(numCol == other._data.size());
-        }
-        catch(std::exception & err) {
-
-            throw(std::invalid_argument("Error: shape of matrices do not match; cannot multiply"));
+        if (numCol != numRow2) {
+            // check the size
+            throw(std::invalid_argument("Error: size of the matrices do not match; cannot multiply"));
         }
 
         Matrix<T, numRow, numCol2> outputMat;
+
+        for (size_t rowIdx = 0; rowIdx < numRow; ++rowIdx) {
+            for (size_t colIdx = 0; colIdx < numCol2; ++colIdx) {
+                T val{0};
+                for (size_t k = 0; k < numCol; ++k) {
+                    val += _data[rowIdx][k] * other(k, colIdx);
+                }
+                outputMat(rowIdx, colIdx) = val;
+            }
+        }
 
         return outputMat;
     }
@@ -154,13 +162,4 @@ private:
         return numRow == otherMatrix._data.size() && numCol == otherMatrix._data.at(0).size();
     }
 
-    void _calcProd(const Matrix & otherMatrix, size_t rowIdx, size_t colIdx, Matrix & outputMatrix) {
-
-        T val{0};
-        for (size_t k = 0; k < numCol; ++k) {
-            val += _data[rowIdx][k] * otherMatrix(k, colIdx);
-        }
-
-        outputMatrix(rowIdx, colIdx) = val;
-    }
 };

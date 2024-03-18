@@ -44,9 +44,9 @@ TEST(TestMatrix, TestMatrixAddition) {
     float maxVal{+100.0f};
     std::uniform_real_distribution<float> distRealNum(minVal, maxVal);
 
-    std::array<std::array<float, numCol>, numRow> array1;
-    std::array<std::array<float, numCol>, numRow> array2;
-    std::array<std::array<float, numCol>, numRow> arraySum;
+    std::array<std::array<float, numCol>, numRow> array1{};
+    std::array<std::array<float, numCol>, numRow> array2{};
+    std::array<std::array<float, numCol>, numRow> arraySum{};
     for (size_t rowIdx = 0; rowIdx < numRow; ++rowIdx) {
         for (size_t colIdx = 0; colIdx < numCol; ++colIdx) {
             float val1{distRealNum(generator)};
@@ -93,7 +93,60 @@ TEST(TestMatrix, TestMatrixMultiplication) {
     Eigen::MatrixXf eigenMatProduct(numRow1, numCol2);
     eigenMatProduct = eigenMat1 * eigenMat2;
 
+    std::cout << "product by Eigen:\n" << eigenMatProduct << '\n';
+
     Matrix<float, numRow1, numCol1> mat1(array1);
     Matrix<float, numRow2, numCol2> mat2(array2);
-    auto mat3 = mat1.mul<float, numRow2, numCol2>(mat2);
+    Matrix<float, numRow1, numCol2> mat3{mat1 * mat2};
+
+    std::cout << "product by Matrix:\n";
+    mat3.printMatrix();
+
+    for (size_t rowIdx = 0; rowIdx < numRow1; ++rowIdx) {
+        for (size_t colIdx = 0; colIdx < numCol2; ++colIdx) {
+            EXPECT_FLOAT_EQ(mat3(rowIdx, colIdx), eigenMatProduct(rowIdx, colIdx));
+        }
+    }
+
+    const size_t numRow3{numCol1 + 1}; // invalid row number
+    const size_t numCol3{2};
+    std::array<std::array<float, numCol3>, numRow3> wrongArray{};
+    Eigen::MatrixXf wrongEigenMat(numRow3, numCol3);
+    getEigenMatrixAndArray<float, numRow3, numCol3>(distRealNum, generator, wrongArray, wrongEigenMat);
+    Matrix mat4(wrongArray);
+
+    try {
+        Matrix<float, numRow1, numCol3> mat5{mat1 * mat4};
+    }
+    catch(std::exception & err) {
+        std::cout << err.what() << '\n';
+    }
+}
+
+TEST(TestMatrix, TestIdentityMatrixMultiplication) {
+    // test multiplication of a vector with identity matrix
+
+    const size_t numRow{3};
+    const size_t numCol{3};
+
+    std::array<std::array<int, numCol>, numRow> array{};
+    getIdentityMatrix<int, numRow, numCol>(array);
+    Matrix<int, numRow, numCol> identityMat(array);
+
+    // uniform random float number generator
+    std::random_device rd;
+    std::mt19937 generator(rd());
+    int minVal{-100};
+    int maxVal{+100};
+    std::uniform_int_distribution<int> distRealNum(minVal, maxVal);
+
+    std::array<std::array<int, 1>, numRow> array1D{};
+    Matrix<int, numRow, 1> vec1(array1D);
+
+    Matrix<int, numRow, 1> vec2{identityMat * vec1};
+
+    for (size_t rowIdx = 0; rowIdx < numRow; ++rowIdx) {
+        EXPECT_FLOAT_EQ(vec1(rowIdx, 0), vec2(rowIdx, 0));
+    }
+
 }
